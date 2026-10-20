@@ -1,0 +1,4 @@
+# Session deletion: Host service plus its Web menu/dialog client half.
+- insert:
+    - id: session-delete
+      name: '@local/dsh-session-delete'

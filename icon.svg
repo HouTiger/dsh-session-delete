@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img">
+  <title>Session Delete</title>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#F2F6FD"/>
+  <path d="M20 18h24" fill="none" stroke="#D64545" stroke-width="4" stroke-linecap="round"/>
+  <path d="M26 18v-2.5A2.5 2.5 0 0 1 28.5 13h7A2.5 2.5 0 0 1 38 15.5V18" fill="none" stroke="#D64545" stroke-width="4" stroke-linecap="round"/>
+  <path d="M23 22h18l-1.7 24.1A4.6 4.6 0 0 1 34.7 50h-5.4a4.6 4.6 0 0 1-4.6-3.9L23 22Z" fill="#D64545"/>
+  <path d="M28.5 29v13M32 29v13M35.5 29v13" fill="none" stroke="#F2F6FD" stroke-width="2.4" stroke-linecap="round" opacity=".92"/>
+  <circle cx="47" cy="44" r="10" fill="#247BBF"/>
+  <path d="M42.5 44.2l3 3 6-6.4" fill="none" stroke="#F2F6FD" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
