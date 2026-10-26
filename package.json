@@ -1,9 +1,9 @@
 {
   "name": "@local/dsh-session-delete",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
-  "description": "Permanently delete sessions from the Harness Web sidebar.",
+  "description": "Permanently delete sessions from the DeepSeek Harness Web sidebar (DSH 0.2.1-rc.3).",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
     "delete"
   ],
   "engines": {
-    "dsh": "0.2.1-rc.2"
+    "dsh": "0.2.1-rc.3"
   },
   "exports": {
     ".": "./index.js",

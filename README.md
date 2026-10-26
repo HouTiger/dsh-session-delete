@@ -2,11 +2,11 @@
 
 在 Harness Web 侧栏的会话「...」菜单中增加 **删除会话**，用于**永久删除**一个会话，而不只是归档。
 
-A DSH Web bundle plugin that adds **Delete session** to the sidebar session menu and permanently removes the session log, workspace account, projection cache, and live Client list entry.
+A DSH Web bundle plugin that adds **Delete session** to the sidebar session menu and permanently removes the session log, workspace account, projection cache, and live Client list entry. Tested with DSH 0.2.1-rc.3.
 
 ## 安装（GitHub）
 
-要求：DSH `0.2.1-rc.2`（见 `package.json` 的 `engines.dsh`）。
+要求：DSH `0.2.1-rc.3`（见 `package.json` 的 `engines.dsh`）。
 
 1. 打开 DSH Web → 侧栏 **Plugins** → **Add plugin**；
 2. 填入 Git 地址：
@@ -72,7 +72,7 @@ node --test test/session-delete.test.mjs
 
 ## 兼容性
 
-本插件依赖当前 DSH 的内部运行结构（Agent scope、live session/agent 注册表、persistence tracker、workspace entity 的 detach mutation），因此把 `engines.dsh` 固定在 `0.2.1-rc.2`。在别的 DSH 版本上安装会被版本检查拦下；请先实测再放宽范围，不要直接绕过检查。
+本插件依赖当前 DSH 的内部运行结构（Agent scope、live session/agent 注册表、persistence tracker、workspace entity 的 detach mutation），因此把 `engines.dsh` 固定在 `0.2.1-rc.3`。在别的 DSH 版本上安装会被版本检查拦下；请先实测再放宽范围，不要直接绕过检查。
 
 ## 许可证
 
