@@ -1,9 +1,9 @@
 {
   "name": "@local/dsh-session-delete",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Permanently delete sessions from the DeepSeek Harness Web sidebar (DSH 0.2.1-rc.3).",
+  "description": "Permanently delete sessions from the DeepSeek Harness Web sidebar (DSH 0.2.x).",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
@@ -14,7 +14,10 @@
     "url": "https://github.com/HouTiger/dsh-session-delete/issues"
   },
   "scripts": {
-    "test": "node --test test/session-delete.test.mjs"
+    "test": "node --test test/session-delete.test.mjs",
+    "test:contract": "node --test test/contract.test.mjs",
+    "test:e2e": "node --test test/e2e/profile.test.mjs",
+    "test:all": "npm run test && npm run test:contract && npm run test:e2e"
   },
   "keywords": [
     "dsh-plugin",
@@ -23,7 +26,7 @@
     "delete"
   ],
   "engines": {
-    "dsh": "0.2.1-rc.3"
+    "dsh": ">=0.2.1-rc.3 <0.4.0"
   },
   "exports": {
     ".": "./index.js",
@@ -42,7 +45,9 @@
     "LICENSE"
   ],
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
       "immediately": true,
@@ -52,5 +57,8 @@
         "@deepseek-ai/dsh-client-ui-workspace"
       ]
     }
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh": "0.2.1-rc.4"
   }
 }

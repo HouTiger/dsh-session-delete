@@ -1,0 +1,101 @@
+name: compat
+
+# Daily compatibility probe: test this bundle against the newest published DSH
+# and, when the version gate would reject it, open a draft pull request that
+# widens `engines.dsh`. The range still ships only after a human smoke-tests the
+# resident-session path, because no automated test covers closing a live Agent.
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.probe.outputs.versions }}
+      newest: ${{ steps.probe.outputs.newest }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - id: probe
+        run: |
+          newest=$(npm view @deepseek-ai/dsh versions --json | node -e '
+            let raw = ""
+            process.stdin.on("data", (chunk) => { raw += chunk })
+            process.stdin.on("end", () => { process.stdout.write(JSON.parse(raw).at(-1)) })
+          ')
+          latest=$(npm view @deepseek-ai/dsh dist-tags.latest)
+          echo "newest=$newest" >> "$GITHUB_OUTPUT"
+          echo "versions=$(node -e 'process.stdout.write(JSON.stringify([...new Set(process.argv.slice(1))]))' "$newest" "$latest")" >> "$GITHUB_OUTPUT"
+
+  compat:
+    needs: probe
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.probe.outputs.versions) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+      - run: npm install --no-audit --no-fund --no-save @deepseek-ai/dsh@${{ matrix.version }}
+      - name: contract tests against DSH ${{ matrix.version }}
+        run: npm run test:contract
+      - name: profile gate test against DSH ${{ matrix.version }}
+        run: npm run test:e2e
+      # Informational: a version outside the range is handled by the widen job,
+      # which opens a draft pull request instead of failing this matrix.
+      - name: engines.dsh covers DSH ${{ matrix.version }}
+        continue-on-error: true
+        run: node scripts/check-engines.mjs ${{ matrix.version }}
+
+  widen:
+    needs: [probe, compat]
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+      - id: decide
+        run: |
+          if node scripts/check-engines.mjs "${{ needs.probe.outputs.newest }}"; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.decide.outputs.needed == 'true'
+        run: |
+          node scripts/widen-engines.mjs "${{ needs.probe.outputs.newest }}"
+          rm -f package-lock.json
+      - if: steps.decide.outputs.needed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          draft: true
+          add-paths: package.json
+          branch: compat/dsh-${{ needs.probe.outputs.newest }}
+          delete-branch: true
+          title: 'compat: cover DSH ${{ needs.probe.outputs.newest }}'
+          commit-message: 'chore: widen engines.dsh for DSH ${{ needs.probe.outputs.newest }}'
+          body: |
+            The daily probe ran the contract suite and the profile gate test against **DSH ${{ needs.probe.outputs.newest }}** and both passed, but `engines.dsh` still rejects that version, so the plugin would be skipped after an automatic DSH update.
+
+            This draft widens the range (lower bound kept, upper bound moved to the next minor) and moves the development dependency to the probed version.
+
+            Before merging, smoke-test the path no automated test covers — deleting a **resident** session:
+
+            - [ ] install this branch's commit into a profile (`dsh plugin --profile <profile> add <this repo>#<commit>`)
+            - [ ] open a session, let it stop, then delete it from the sidebar menu
+            - [ ] confirm the row disappears, and the log directory, projection cache, and workspace account are gone
+            - [ ] if the resident path fails, close this draft and fix the plugin instead

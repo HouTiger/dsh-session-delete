@@ -13,4 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node --test test/session-delete.test.mjs
+      # No lockfile: the DSH devDependency is exact, so resolution stays stable
+      # while a compat bump stays a one-line diff.
+      - run: npm install --no-audit --no-fund
+      - run: npm run test:all

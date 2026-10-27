@@ -2,11 +2,11 @@
 
 在 Harness Web 侧栏的会话「...」菜单中增加 **删除会话**，用于**永久删除**一个会话，而不只是归档。
 
-A DSH Web bundle plugin that adds **Delete session** to the sidebar session menu and permanently removes the session log, workspace account, projection cache, and live Client list entry. Tested with DSH 0.2.1-rc.3.
+A DSH Web bundle plugin that adds **Delete session** to the sidebar session menu and permanently removes the session log, workspace account, projection cache, and live Client list entry. Supports DSH `>=0.2.1-rc.3 <0.4.0`.
 
 ## 安装（GitHub）
 
-要求：DSH `0.2.1-rc.3`（见 `package.json` 的 `engines.dsh`）。
+要求：DSH `>=0.2.1-rc.3 <0.4.0`（见 `package.json` 的 `engines.dsh`）。
 
 1. 打开 DSH Web → 侧栏 **Plugins** → **Add plugin**；
 2. 填入 Git 地址：
@@ -65,14 +65,43 @@ git+https://github.com/HouTiger/dsh-session-delete.git#<commit>
 ## 开发
 
 ```bash
-node --test test/session-delete.test.mjs
+npm install      # 装 @deepseek-ai/dsh（devDependency），契约与 e2e 测试需要它
+npm run test:all # 单测 + 契约测试 + 版本门禁 e2e
 ```
 
-测试覆盖日志/缓存/工作区清理、驻留会话关闭、停止失败、非法 id 和未物化会话。
+三组测试各管一件事：
+
+| 命令 | 覆盖 |
+|---|---|
+| `npm test` | 纯函数与删除流程（mock 服务）：日志/缓存/工作区清理、驻留会话关闭、停止失败、非法 id、未物化会话 |
+| `npm run test:contract` | 对**真实** DSH 包断言内部契约：`engines.dsh` 接受当前运行时、`SessionStore`/`AgentRegistry` 的 `store` + `detachEntered`、JSONL persistence 的 `root`/`stat`/`tracker.openHandles`、workspace 实体的 `detachSession`、`api-session/removed` 与 `workspace/session-stop` |
+| `npm run test:e2e` | 用真实 `dsh` CLI 在临时 `DSH_HOME` 里组合 profile：本插件贡献 `session-delete` 行；反例（`engines.dsh` 写死不可能范围）会被版本门禁跳过 |
 
 ## 兼容性
 
-本插件依赖当前 DSH 的内部运行结构（Agent scope、live session/agent 注册表、persistence tracker、workspace entity 的 detach mutation），因此把 `engines.dsh` 固定在 `0.2.1-rc.3`。在别的 DSH 版本上安装会被版本检查拦下；请先实测再放宽范围，不要直接绕过检查。
+本插件依赖 DSH 的内部运行结构（Agent scope、live session/agent 注册表、persistence tracker、workspace entity 的 detach mutation），而 DSH 没有公开的「删除会话」API，因此版本范围需要跟着 DSH 走，不能完全去掉检查。
+
+`engines.dsh` 写的是一个范围而不是精确版本：
+
+```json
+"engines": { "dsh": ">=0.2.1-rc.3 <0.4.0" }
+```
+
+DSH 用 `semver.satisfies(runtime, range, { includePrerelease: true })` 判定，所以 `0.2.x` 与 `0.4.0` 之前的所有预发布版都会通过，`0.4.0` 正式版是需要重新确认的破坏边界。
+
+自动跟版：
+
+- `.github/workflows/compat.yml` 每天探测 npm 上最新发布的 `@deepseek-ai/dsh`，先跑契约测试与门禁 e2e；如果新版本落在范围外且测试通过，就自动开一个 **draft PR** 放宽上界、同步 devDependency。
+- `.github/workflows/test.yml` 在每次 push / PR 上跑全部三组测试。
+
+**合并 draft PR 前要手工确认一件事**：驻留会话（打开过、已停止但仍在内存里）的删除路径没有自动化覆盖——它要真的关掉一个活着的 Agent scope。流程是装该分支的 commit，打开一个会话、等它停下、从侧栏菜单删除，确认行消失且日志目录/投影缓存/工作区记账都没了。
+
+需要临时放行范围外的版本时，用精确豁免（写入 `$DSH_HOME/profiles/<profile>/compatibility.json`，精确到包版本 + DSH 版本）：
+
+```bash
+dsh plugin --profile desktop allow-version @local/dsh-session-delete@1.1.0 --dsh-version 0.4.0 --accept-risk
+dsh plugin --profile desktop version-exemptions   # 查看
+```
 
 ## 许可证
 
